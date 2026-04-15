@@ -33,11 +33,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { user, loading } = useAuth();
 
+  // Redirecionamento desativado para modo de teste
+  /*
   useEffect(() => {
     if (!loading && !user) {
       router.push("/auth/login");
     }
   }, [user, loading, router]);
+  */
 
   const handleLogout = async () => {
     try {

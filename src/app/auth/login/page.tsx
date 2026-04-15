@@ -233,6 +233,14 @@ export default function LoginPage() {
                 </div>
               )}
             </Button>
+
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard")}
+              className="w-full h-14 bg-white/5 border border-white/10 text-wood-400 hover:text-white hover:bg-white/10 rounded-2xl text-xs font-bold uppercase tracking-[2px] mt-2 transition-all"
+            >
+              Entrar em Modo Teste (Visitante)
+            </button>
           </form>
 
           {/* Footer Actions */}

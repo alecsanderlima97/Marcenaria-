@@ -12,12 +12,22 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+      } else {
+        // Modo Desenvolvedor/Teste: Fornece um usuário mock se não houver login
+        setUser({
+          uid: "guest-user-id",
+          displayName: "Mestre Convidado",
+          email: "convidado@woodmaster.com",
+          photoURL: null,
+        });
+      }
       setLoading(false);
     });
 
@@ -26,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
-      {!loading && children}
+       {children}
     </AuthContext.Provider>
   );
 }
