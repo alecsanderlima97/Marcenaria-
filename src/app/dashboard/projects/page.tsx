@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { 
   Hammer, 
   Search, 
@@ -14,6 +15,7 @@ import {
   DollarSign
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import Link from "next/link";
 import { useState } from "react";
 
 const projects = [
