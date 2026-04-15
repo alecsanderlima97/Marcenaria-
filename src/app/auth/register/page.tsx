@@ -78,7 +78,7 @@ export default function RegisterPage() {
       if (err.code === "auth/email-already-in-use") {
         setError("Este e-mail já está em uso.");
       } else {
-        setError("Erro ao criar conta. Tente novamente mais tarde.");
+        setError(`Erro: ${err.message || "Erro desconhecido"}. Verifique o console do navegador.`);
       }
     } finally {
       setLoading(false);

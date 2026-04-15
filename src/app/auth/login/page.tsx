@@ -1,11 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Hammer, LogIn, Mail, Lock, GitBranch, AlertCircle, Loader2 } from "lucide-react";
+import { Hammer, LogIn, Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { auth } from "@/services/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -14,8 +13,20 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  const playLoginSound = () => {
+    try {
+      const audio = new Audio('/login_sound.mp3');
+      audio.volume = 0.5;
+      audio.play().catch(() => console.log("Som de login ignorado"));
+    } catch (e) {
+      console.log("Sistema de áudio indisponível");
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,54 +35,67 @@ export default function LoginPage() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard");
+      
+      // Lógica de Sucesso (Copidada da Estética Automotiva)
+      setSuccess(true);
+      playLoginSound();
+      
+      // Delay de 1.5s para sentir a entrada no sistema
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1500);
+      
     } catch (err: any) {
       console.error("Login error:", err);
-      if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
-        setError("E-mail ou senha incorretos.");
-      } else {
-        setError("Ocorreu um erro ao tentar entrar. Tente novamente.");
-      }
-    } finally {
       setLoading(false);
+      if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+        setError("Credenciais de acesso incorretas.");
+      } else {
+        setError("Falha na conexão. Verifique sua rede e tente novamente.");
+      }
     }
   };
 
   return (
-    <main className="min-h-screen grid lg:grid-cols-2 bg-wood-950">
-      {/* Visual Section - Visible on Desktop */}
-      <div className="hidden lg:flex relative overflow-hidden items-center justify-center p-12 bg-[url('https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?q=80&w=1974')] bg-cover bg-center">
-        <div className="absolute inset-0 bg-wood-950/60 backdrop-blur-[2px]"></div>
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 text-center space-y-6 max-w-lg"
-        >
-          <div className="flex justify-center mb-8">
-             <div className="w-20 h-20 bg-brass-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-brass-600/30">
-                <Hammer className="text-wood-950" size={40} />
-             </div>
-          </div>
-          <h2 className="text-5xl font-bold text-white tracking-tight">
-            Bem-vindo de volta, <span className="text-brass-500">Mestre.</span>
-          </h2>
-          <p className="text-wood-200 text-xl font-light">
-            Sua oficina digital está pronta para mais um dia de grandes criações.
-          </p>
-        </motion.div>
+    <main className="min-h-screen flex items-center justify-center bg-wood-950 p-6 relative overflow-hidden">
+      {/* Background Decorativo - Premium Wood */}
+      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brass-600/20 blur-[120px] rounded-full"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-wood-800/20 blur-[120px] rounded-full"></div>
       </div>
 
-      {/* Form Section */}
-      <div className="flex items-center justify-center p-8 bg-wood-950">
-        <motion.div 
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="w-full max-w-md space-y-8"
-        >
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-white">Acessar Painel</h1>
-            <p className="text-wood-400">Insira suas credenciais para continuar.</p>
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-[440px] z-10"
+      >
+        <div className="glass p-8 md:p-12 rounded-[32px] border border-white/5 shadow-2xl relative overflow-hidden">
+          {/* Overlay de Sucesso */}
+          {success && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute inset-0 bg-wood-900/90 backdrop-blur-md z-50 flex flex-col items-center justify-center text-center p-6"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", damping: 12 }}
+                className="w-20 h-20 bg-brass-500 rounded-full flex items-center justify-center text-wood-950 mb-6"
+              >
+                <CheckCircle size={48} strokeWidth={3} />
+              </motion.div>
+              <h2 className="text-2xl font-bold text-white mb-2">Acesso Autorizado</h2>
+              <p className="text-wood-400">Preparando sua oficina digital...</p>
+            </motion.div>
+          )}
+
+          <div className="text-center space-y-4 mb-10">
+            <div className="inline-flex p-4 bg-brass-500 rounded-2xl shadow-xl shadow-brass-600/20 mb-4">
+              <Hammer className="text-wood-950" size={32} />
+            </div>
+            <h1 className="text-3xl font-bold text-white tracking-tight">WoodMaster <span className="text-brass-500">ERP</span></h1>
+            <p className="text-wood-500 text-sm">Sistema Exclusivo de Gestão</p>
           </div>
 
           <form className="space-y-6" onSubmit={handleLogin}>
@@ -79,85 +103,66 @@ export default function LoginPage() {
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl flex items-center gap-3 text-sm"
+                className="bg-red-500/10 border border-red-500/50 text-red-500 px-4 py-3 rounded-xl flex items-center gap-3 text-sm"
               >
-                <AlertCircle size={20} />
+                <AlertCircle size={18} />
                 {error}
               </motion.div>
             )}
 
-            <Input 
-              label="E-mail Corporativo"
-              type="email"
-              placeholder="seu@email.com"
-              className="mt-1"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <Input 
-              label="Sua Senha"
-              type="password"
-              placeholder="••••••••"
-              className="mt-1"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="space-y-4">
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-wood-600 group-focus-within:text-brass-500 transition-colors" size={20} />
+                <input 
+                  type="email"
+                  placeholder="E-mail de acesso"
+                  className="w-full bg-wood-900/50 border border-wood-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-wood-700 focus:outline-none focus:ring-2 focus:ring-brass-500/20 focus:border-brass-500 transition-all"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center text-wood-400 cursor-pointer">
-                <input type="checkbox" className="mr-2 accent-brass-500 rounded" />
-                Lembrar de mim
-              </label>
-              <Link href="#" className="text-brass-500 hover:text-brass-400 transition-colors">
-                Esqueceu a senha?
-              </Link>
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-wood-600 group-focus-within:text-brass-500 transition-colors" size={20} />
+                <input 
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Sua senha secreta"
+                  className="w-full bg-wood-900/50 border border-wood-800 rounded-2xl py-4 pl-12 pr-12 text-white placeholder:text-wood-700 focus:outline-none focus:ring-2 focus:ring-brass-500/20 focus:border-brass-500 transition-all"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button 
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-wood-600 hover:text-wood-400 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
             </div>
 
-            <Button className="w-full" type="submit" disabled={loading}>
+            <Button 
+              className="w-full h-14 rounded-2xl text-lg font-bold mt-4" 
+              type="submit" 
+              disabled={loading || success}
+            >
               {loading ? (
-                <Loader2 className="animate-spin" size={20} />
+                <Loader2 className="animate-spin" size={24} />
               ) : (
-                <LogIn size={20} />
+                <div className="flex items-center gap-3">
+                  Entrar no Sistema <LogIn size={20} />
+                </div>
               )}
-              {loading ? "Autenticando..." : "Entrar na Oficina"}
             </Button>
           </form>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-wood-800"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-wood-950 text-wood-500">Ou entre com</span>
-            </div>
+          <div className="mt-12 text-center text-[10px] text-wood-700 uppercase tracking-[2px] font-bold">
+            OrQuestraCS • Sistemas Personalizados
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Button variant="secondary" className="w-full">
-              <GitBranch size={20} />
-              GitHub
-            </Button>
-            <Button variant="secondary" className="w-full">
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-              </svg>
-              Google
-            </Button>
-          </div>
-
-          <p className="text-center text-wood-400">
-            Ainda não tem conta?{" "}
-            <Link href="/auth/register" className="text-brass-500 font-bold hover:text-brass-400">
-              Crie seu perfil experimental
-            </Link>
-          </p>
-        </motion.div>
-      </div>
+        </div>
+      </motion.div>
     </main>
   );
 }
