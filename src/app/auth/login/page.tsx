@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Hammer, LogIn, Mail, Lock, Github } from "lucide-react";
+import { Hammer, LogIn, Mail, Lock, GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import Link from "next/link";
@@ -85,7 +85,7 @@ export default function LoginPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <Button variant="secondary" className="w-full">
-              <Github size={20} />
+              <GitBranch size={20} />
               GitHub
             </Button>
             <Button variant="secondary" className="w-full">
