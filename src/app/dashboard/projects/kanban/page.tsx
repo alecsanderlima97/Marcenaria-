@@ -110,7 +110,7 @@ export default function KanbanPage() {
       setProjects((prev) => {
         const activeIndex = prev.findIndex((p) => p.id === activeId);
         const updatedProjects = [...prev];
-        updatedProjects[activeIndex].status = overId as string;
+        updatedProjects[activeIndex].status = overId as any;
         
         return arrayMove(updatedProjects, activeIndex, activeIndex);
       });
