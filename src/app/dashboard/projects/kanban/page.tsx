@@ -123,11 +123,11 @@ export default function KanbanPage() {
     if (!over) return;
 
     const project = projects.find(p => p.id === active.id);
-    if (project && user) {
+    if (project && project.id && user) {
       try {
         await projectService.update(project.id, { 
           status: project.status,
-          updatedAt: new Date() as any // Firestore will handle serverTimestamp if we use the service update properly
+          updatedAt: new Date() as any 
         });
       } catch (error) {
         console.error("Error updating project status after drag:", error);
