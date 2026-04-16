@@ -5,20 +5,28 @@ import { useAuth } from "@/modules/auth/context/AuthContext";
 import { projectService } from "@/modules/erp/services/projectService";
 import { Project } from "@/modules/erp/types/project";
 import { 
-  Hammer, 
-  Search, 
   Plus, 
   LayoutGrid, 
-  Columns, 
-  MoreHorizontal,
-  Clock,
-  User,
-  Loader2,
-  ArrowRight
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { 
+  DndContext, 
+  DragOverlay, 
+  closestCorners, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors,
+  DragStartEvent,
+  DragOverEvent,
+  DragEndEvent,
+  defaultDropAnimationSideEffects
+} from "@dnd-kit/core";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { KanbanColumn } from "@/modules/erp/components/Kanban/KanbanColumn";
+import { KanbanCard } from "@/modules/erp/components/Kanban/KanbanCard";
 
 const COLUMNS = [
   { id: "Medição", label: "Medição", color: "border-blue-500" },
@@ -31,7 +39,19 @@ const COLUMNS = [
 export default function KanbanPage() {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -48,15 +68,78 @@ export default function KanbanPage() {
     fetchProjects();
   }, [user]);
 
-  const projectsByColumn = (columnId: string) => {
-    return projects.filter(p => p.status === columnId);
+  const onDragStart = (event: DragStartEvent) => {
+    if (event.active.data.current?.type === "Project") {
+      setActiveProject(event.active.data.current.project);
+    }
+  };
+
+  const onDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    const isActiveACard = active.data.current?.type === "Project";
+    const isOverACard = over.data.current?.type === "Project";
+
+    if (!isActiveACard) return;
+
+    // Dropping a card over another card
+    if (isActiveACard && isOverACard) {
+      setProjects((prev) => {
+        const activeIndex = prev.findIndex((p) => p.id === activeId);
+        const overIndex = prev.findIndex((p) => p.id === overId);
+
+        if (prev[activeIndex].status !== prev[overIndex].status) {
+          const updatedProjects = [...prev];
+          updatedProjects[activeIndex].status = updatedProjects[overIndex].status;
+          return arrayMove(updatedProjects, activeIndex, overIndex);
+        }
+
+        return arrayMove(prev, activeIndex, overIndex);
+      });
+    }
+
+    // Dropping a card over a column
+    const isOverAColumn = COLUMNS.some(col => col.id === overId);
+    if (isActiveACard && isOverAColumn) {
+      setProjects((prev) => {
+        const activeIndex = prev.findIndex((p) => p.id === activeId);
+        const updatedProjects = [...prev];
+        updatedProjects[activeIndex].status = overId as string;
+        
+        return arrayMove(updatedProjects, activeIndex, activeIndex);
+      });
+    }
+  };
+
+  const onDragEnd = async (event: DragEndEvent) => {
+    setActiveProject(null);
+    const { active, over } = event;
+    if (!over) return;
+
+    const project = projects.find(p => p.id === active.id);
+    if (project && user) {
+      try {
+        await projectService.update(project.id, { 
+          status: project.status,
+          updatedAt: new Date() as any // Firestore will handle serverTimestamp if we use the service update properly
+        });
+      } catch (error) {
+        console.error("Error updating project status after drag:", error);
+      }
+    }
   };
 
   if (loading) {
     return (
       <div className="h-full flex flex-col items-center justify-center space-y-4">
         <Loader2 className="animate-spin text-brass-500" size={48} />
-        <p className="text-wood-400">Preparando sua linha de produção...</p>
+        <p className="text-wood-400 font-bold uppercase tracking-widest text-[10px]">Lixando a madeira...</p>
       </div>
     );
   }
@@ -84,82 +167,43 @@ export default function KanbanPage() {
         </div>
       </div>
 
-      {/* Kanban Board Container */}
-      <div className="flex-1 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-wood-800">
-        <div className="flex gap-6 min-w-[1200px] h-full">
-          {COLUMNS.map((col) => (
-            <div key={col.id} className="w-80 flex flex-col space-y-4">
-              {/* Column Header */}
-              <div className={`p-4 bg-white/5 rounded-2xl border-t-4 ${col.color} flex items-center justify-between`}>
-                <div className="flex items-center gap-3">
-                  <h3 className="text-sm font-black text-white uppercase tracking-widest">{col.label}</h3>
-                  <span className="w-6 h-6 rounded-lg bg-wood-900 border border-white/5 flex items-center justify-center text-[10px] font-bold text-wood-400">
-                    {projectsByColumn(col.id).length}
-                  </span>
-                </div>
-                <button className="text-wood-600 hover:text-white transition-colors">
-                  <Plus size={16} />
-                </button>
-              </div>
-
-              {/* Column Cards */}
-              <div className="flex-1 space-y-4 overflow-y-auto pr-2">
-                <AnimatePresence>
-                  {projectsByColumn(col.id).map((project) => (
-                    <motion.div
-                      key={project.id}
-                      layoutId={project.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      whileHover={{ y: -4 }}
-                      className="glass p-5 rounded-2xl border-white/5 hover:border-brass-500/30 transition-all cursor-pointer group"
-                    >
-                      <div className="space-y-4">
-                         <div className="flex justify-between items-start">
-                           <span className="text-[10px] font-black text-brass-500/80 uppercase tracking-widest">
-                             #{project.id?.slice(0, 5).toUpperCase()}
-                           </span>
-                           <button className="text-wood-700 group-hover:text-wood-400 transition-colors">
-                             <MoreHorizontal size={14} />
-                           </button>
-                         </div>
-                         
-                         <h4 className="text-md font-bold text-white uppercase tracking-tight leading-tight group-hover:text-brass-500 transition-colors">
-                           {project.name}
-                         </h4>
-
-                         <div className="flex items-center gap-2 pt-2 text-[10px] uppercase font-bold text-wood-500">
-                           <User size={12} className="text-wood-700" />
-                           <span className="truncate">{project.customerName}</span>
-                         </div>
-
-                         <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                            <div className="flex items-center gap-1.5 text-wood-600">
-                               <Clock size={12} />
-                               <span className="text-[10px] font-bold">{project.deadline}</span>
-                            </div>
-                            <Link href={`/dashboard/projects/${project.id}`}>
-                              <div className="p-2 bg-wood-950 rounded-lg text-brass-500 hover:bg-brass-500 hover:text-wood-950 transition-all">
-                                <ArrowRight size={14} />
-                              </div>
-                            </Link>
-                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-                
-                {projectsByColumn(col.id).length === 0 && (
-                  <div className="h-24 border-2 border-dashed border-white/5 rounded-2xl flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-wood-700 uppercase tracking-widest italic">Vazio</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDragEnd={onDragEnd}
+      >
+        <div className="flex-1 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-wood-800">
+          <div className="flex gap-6 min-w-[1200px] h-full">
+            {COLUMNS.map((col) => (
+              <KanbanColumn 
+                key={col.id} 
+                id={col.id} 
+                label={col.label} 
+                color={col.color} 
+                projects={projects.filter(p => p.status === col.id)} 
+              />
+            ))}
+          </div>
         </div>
-      </div>
+
+        <DragOverlay dropAnimation={{
+          sideEffects: defaultDropAnimationSideEffects({
+            styles: {
+              active: {
+                opacity: "0.5",
+              },
+            },
+          }),
+        }}>
+          {activeProject ? (
+            <div className="w-80 rotate-3">
+              <KanbanCard project={activeProject} />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 }

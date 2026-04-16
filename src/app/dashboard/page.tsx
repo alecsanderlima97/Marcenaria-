@@ -15,9 +15,9 @@ import Link from "next/link";
 import { useAuth } from "@/modules/auth/context/AuthContext";
 import { projectService } from "@/modules/erp/services/projectService";
 import { inventoryService } from "@/modules/erp/services/inventoryService";
-import { customerService } from "@/modules/crm/services/customerService";
 import { Project } from "@/modules/erp/types/project";
 import { InventoryItem } from "@/modules/erp/types/inventory";
+import { FinancialChart } from "./components/FinancialChart";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -95,6 +95,18 @@ export default function DashboardPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Analytics Section */}
+      <div className="glass p-8 rounded-[32px] border-white/5 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-8 opacity-5">
+           <DollarSign size={120} className="text-brass-500" />
+        </div>
+        <div className="relative z-10 w-full lg:w-3/4">
+          <h3 className="text-xl font-bold text-white px-1 border-l-4 border-brass-500 ml-[-4px] uppercase tracking-tighter">Performance Financeira</h3>
+          <p className="text-wood-500 text-xs mt-1 font-bold uppercase tracking-widest">Faturamento mensal bruto (Últimos 6 meses)</p>
+          <FinancialChart />
+        </div>
       </div>
 
       {/* Secondary Grid */}
