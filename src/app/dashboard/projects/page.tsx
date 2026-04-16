@@ -205,6 +205,7 @@ export default function ProjectsPage() {
                 <div className="flex items-center justify-end gap-3 border-t lg:border-t-0 pt-4 lg:pt-0 lg:pl-6 lg:border-l lg:border-wood-900">
                   <button 
                     onClick={async () => {
+                      if (!user) return;
                       const client = await customerService.getById(user.uid, project.customerId);
                       pdfGenerator.generateProjectOS(project, client);
                     }}
