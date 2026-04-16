@@ -20,7 +20,7 @@ export function KanbanCard({ project }: KanbanCardProps) {
     transition,
     isDragging,
   } = useSortable({
-    id: project.id,
+    id: project.id!,
     data: {
       type: "Project",
       project,

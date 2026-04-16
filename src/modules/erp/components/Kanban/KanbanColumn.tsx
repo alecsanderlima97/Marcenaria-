@@ -38,7 +38,7 @@ export function KanbanColumn({ id, label, color, projects }: KanbanColumnProps) 
         ref={setNodeRef}
         className="flex-1 space-y-4 overflow-y-auto pr-2 min-h-[500px]"
       >
-        <SortableContext items={projects.map(p => p.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={projects.map(p => p.id!)} strategy={verticalListSortingStrategy}>
           {projects.map((project) => (
             <KanbanCard key={project.id} project={project} />
           ))}
