@@ -50,3 +50,5 @@ O **WoodMaster** é uma plataforma SaaS premium desenvolvida pela **Orqeustracs*
 ## 📄 Licença
 
 Desenvolvido com ❤️ por [Orqeustracs](https://github.com/alecsanderlima97). Todos os direitos reservados.
+<!-- Deployment Trigger: WoodMaster Infrastructure Unified -->
+
