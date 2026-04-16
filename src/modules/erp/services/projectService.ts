@@ -16,6 +16,7 @@ import { Project } from "../types/project";
 
 const COLLECTION_NAME = "projects";
 
+export const projectService = {
   async getAll(userId: string): Promise<Project[]> {
     if (userId === "guest-user-id") {
       return [
